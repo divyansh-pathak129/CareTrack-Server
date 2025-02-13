@@ -47,6 +47,8 @@ app.post('/', async (req, res) => {
                     bpm: parseInt(bpm)
                 };
 
+                console.log('Received Data(RAW):', req.body);
+                console.log('Received Data:', cleanData);
                 console.log('Parsed Data:', parsedData);
                 
                 // Save to file in a more structured format
