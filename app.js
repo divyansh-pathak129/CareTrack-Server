@@ -1,5 +1,5 @@
-require('dotenv').config();
 const express = require('express');
+const bodyParser = require('body-parser');
 const cors = require('cors');
 const fs = require('fs').promises;
 const path = require('path');
@@ -19,24 +19,22 @@ const DATA_FILE = path.join(DATA_DIR, 'sensor_data.txt');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.text()); // Changed to text parser instead of JSON
 
 app.post('/', async (req, res) => {
     try {
-        const data = req.body;
         const timestamp = new Date().toISOString().replace('T', ' ').substr(0, 19);
+        console.log(`Received Data: ${req.body}`);
         
         // Save to file
-        await fs.appendFile(DATA_FILE, `[${timestamp}] ${JSON.stringify(data)}\n`);
+        await fs.appendFile(DATA_FILE, `[${timestamp}] ${req.body}\n`);
         
-        console.log(`Data received: [${timestamp}] ${JSON.stringify(data)}`);
-        console.log(`Data received: [${timestamp}] ${data}`);        
-        res.status(200).send('Data received');
+        res.status(200).send('Data Received');
     } catch (error) {
-        console.error('Error processing data:', error);
+        console.error('Error:', error);
         res.status(500).send('Error processing data');
     }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log("Server is Running on " + PORT));
+const PORT = 5000;
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
