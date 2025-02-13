@@ -24,12 +24,40 @@ app.use(bodyParser.text()); // Changed to text parser instead of JSON
 app.post('/', async (req, res) => {
     try {
         const timestamp = new Date().toISOString().replace('T', ' ').substr(0, 19);
-        console.log(`Received Data: ${req.body}`);
         
-        // Save to file
-        await fs.appendFile(DATA_FILE, `[${timestamp}] ${req.body}\n`);
+        // Split the incoming data into lines
+        const lines = req.body.split('\n');
         
-        res.status(200).send('Data Received');
+        // Process each line
+        for (const line of lines) {
+            if (line.startsWith('$') && line.endsWith('#')) {
+                // Remove $ and # symbols
+                const cleanData = line.slice(1, -1);
+                
+                // Split by comma
+                const [time, acceleration, gyro, temperature, ecg, bpm] = cleanData.split(',');
+                
+                // Create structured data object
+                const parsedData = {
+                    time,
+                    acceleration: parseFloat(acceleration),
+                    gyro: parseFloat(gyro),
+                    temperature: parseFloat(temperature),
+                    ecg: parseInt(ecg),
+                    bpm: parseInt(bpm)
+                };
+
+                console.log('Parsed Data:', parsedData);
+                
+                // Save to file in a more structured format
+                await fs.appendFile(
+                    DATA_FILE, 
+                    `[${timestamp}] ${JSON.stringify(parsedData)}\n`
+                );
+            }
+        }
+        
+        res.status(200).send('Data Received and Parsed');
     } catch (error) {
         console.error('Error:', error);
         res.status(500).send('Error processing data');
