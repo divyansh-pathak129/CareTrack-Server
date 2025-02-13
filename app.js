@@ -30,6 +30,7 @@ app.post('/', async (req, res) => {
         await fs.appendFile(DATA_FILE, `[${timestamp}] ${JSON.stringify(data)}\n`);
         
         console.log(`Data received: [${timestamp}] ${JSON.stringify(data)}`);
+        console.log(`Data received: [${timestamp}] ${data}`);        
         res.status(200).send('Data received');
     } catch (error) {
         console.error('Error processing data:', error);
