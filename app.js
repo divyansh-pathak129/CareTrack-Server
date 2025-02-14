@@ -47,18 +47,35 @@ io.on('connection', (socket) => {
 app.post('/', async (req, res) => {
     try {
         const timestamp = new Date().toISOString().replace('T', ' ').substr(0, 19);
-        const data = {
+        
+        // Clean and parse the incoming data
+        const cleanData = req.body.replace(/^\$/, '').replace(/#$/, '');
+        const [timeStr, ...values] = cleanData.split(',');
+        
+        // Parse the values into a structured object
+        const parsedData = {
+            sensorTime: timeStr,
             timestamp: timestamp,
-            value: req.body
+            values: {
+                acceleration: parseFloat(values[0]),
+                gyro: parseFloat(values[1]),
+                temperature: parseFloat(values[2]),
+                ecg: parseInt(values[3]),
+                bpm: parseInt(values[4]),
+                fallDetection: parseInt(values[5]),
+            },
         };
 
-        console.log(`Received Data: ${req.body}`);
+        console.log('Parsed Data:', parsedData);
         
-        // Emit to all connected clients
-        io.emit('newData', data);
+            // Emit parsed data to clients
+        io.emit('newData', parsedData);
         
-        // Save to file
-        await fs.appendFile(DATA_FILE, `[${timestamp}] ${req.body}\n`);
+        // Save both raw and parsed data to file
+        await fs.appendFile(
+            DATA_FILE, 
+            `[${timestamp}] Raw: ${req.body} | Parsed: ${JSON.stringify(parsedData)}\n`
+        );
         
         res.status(200).send('Data Received');
     } catch (error) {
