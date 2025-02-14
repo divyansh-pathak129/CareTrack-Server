@@ -5,3 +5,5 @@
 [2025-02-13 16:31:52] {"message":"$<timestamp>,<acceleration>,<gyro>,<temperature>,<ecg>,<bpm>#\r\n"}
 [2025-02-13 16:31:53] {"message":"$<timestamp>,<acceleration>,<gyro>,<temperature>,<ecg>,<bpm>#\r\n"}
 [2025-02-13 16:32:05] {"message":"Hello World"}
+[2025-02-14 01:57:32] Hi
+[2025-02-14 01:58:14] Hi
