@@ -5,6 +5,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
+const twilio = require('twilio');
 
 const app = express();
 app.use(cors());
@@ -21,6 +22,31 @@ const io = new Server(server, {
         credentials: true
     }
 });
+
+const accountSid = process.env.accountSid;
+const authToken = process.env.authToken;
+
+console.log(accountSid);
+console.log(authToken);
+
+const client = twilio(accountSid, authToken);
+
+async function sendSMS(to, message) {
+    try {
+        const response = await client.messages.create({
+            body: message, // The SMS message body
+            from: '+15393997445', // Your Twilio phone number
+            to: to, // The recipient's phone number,
+            username: "himanshu",
+        });
+        console.log(`SMS sent successfully! Message SID: ${response.sid}`);
+        return response;
+    } catch (error) {
+        console.error('Error sending SMS:', error);
+        throw error;
+    }
+}
+
 
 // Data storage setup
 const DATA_DIR = path.join(__dirname, 'data');
@@ -42,6 +68,16 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('Client disconnected');
     });
+
+    socket.on('fallDetected', async (data) => {
+        try {
+            console.log('Fall Detected, Sending SMS');
+            await sendSMS('+916396192629', 'Fall Detected');
+        } catch (error) {
+            console.error('Error sending SMS:', error);
+        }
+    }
+    );
 });
 
 app.post('/', async (req, res) => {
