@@ -78,9 +78,14 @@ app.post('/', async (req, res) => {
     try {
         const timestamp = new Date().toISOString().replace('T', ' ').substr(0, 19);
 
-
+        let rawData = req.body;
         
-        const cleanData = req.body.replace(/^\$/, '').replace(/#$/, '');
+        // Ensure rawData is a string if it's not already
+        if (typeof rawData !== 'string') {
+            rawData = JSON.stringify(req.body);
+        }
+
+        const cleanData = rawData.replace(/^\$/, '').replace(/#$/, '');
         const [timeStr, ...values] = cleanData.split(',');
 
         const parsedData = {
@@ -103,7 +108,7 @@ app.post('/', async (req, res) => {
         
         await fs.appendFile(
             DATA_FILE, 
-            `[${timestamp}] Raw: ${req.body} | Parsed: ${JSON.stringify(parsedData)}\n`
+            `[${timestamp}] Raw: ${rawData} | Parsed: ${JSON.stringify(parsedData)}\n`
         );
         
         res.status(200).send('Data Received');
