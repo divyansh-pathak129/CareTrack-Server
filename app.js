@@ -76,20 +76,44 @@ io.on('connection', (socket) => {
 
 app.post('/', async (req, res) => {
     try {
-        const data = req.body;
         const timestamp = new Date().toISOString().replace('T', ' ').substr(0, 19);
+
+
         
-        // Save to file
-        await fs.appendFile(DATA_FILE, `[${timestamp}] ${JSON.stringify(data)}\n`);
+        const cleanData = req.body.replace(/^\$/, '').replace(/#$/, '');
+        const [timeStr, ...values] = cleanData.split(',');
+
+        const parsedData = {
+            sensorTime: timeStr,
+            timestamp: timestamp,
+            values: {
+                acceleration: parseFloat(values[0]),
+                gyro: parseFloat(values[1]),
+                temperature: parseFloat(values[2]),
+                ecg: parseInt(values[3]),
+                bpm: parseInt(values[4]),
+                fallDetection: parseInt(values[5]),
+                egrConnection: parseInt(values[6]),
+            },
+        };
+
+        console.log('Parsed Data:', parsedData);
         
-        console.log(`Data received: [${timestamp}] ${JSON.stringify(data)}`);
-        console.log(`Data received: [${timestamp}] data`);        
-        res.status(200).send('Data received');
+        io.emit('newData', parsedData);
+        
+        await fs.appendFile(
+            DATA_FILE, 
+            `[${timestamp}] Raw: ${req.body} | Parsed: ${JSON.stringify(parsedData)}\n`
+        );
+        
+        res.status(200).send('Data Received');
     } catch (error) {
-        console.error('Error processing data:', error);
+        console.error('Error:', error);
         res.status(500).send('Error processing data');
     }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log("Server is Running on " + PORT));
+
+const PORT = 5000;
+// Use the HTTP server instead of Express app to listen
+server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
