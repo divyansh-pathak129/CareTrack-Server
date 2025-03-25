@@ -10,6 +10,7 @@ const twilio = require('twilio');
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'sensor_data.txt');
 
+
 const accountSid = process.env.accountSid;
 const authToken = process.env.authToken;
 
@@ -65,6 +66,12 @@ io.on('connection', (socket) => {
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: { origin: "*" },
+});
 
 app.post('/', async (req, res) => {
     try {
