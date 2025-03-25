@@ -1,38 +1,21 @@
 require('dotenv').config();
 const express = require('express');
-const bodyParser = require('body-parser');
 const cors = require('cors');
 const fs = require('fs').promises;
 const path = require('path');
-const http = require('http');
-const { Server } = require('socket.io');
-const twilio = require('twilio');
 
-const app = express();
-app.use(cors());
-app.use(bodyParser.text());
-
-const server = http.createServer(app);
-
-const io = new Server(server, {
-    cors: {
-        origin: '*',
-        methods: ['GET', 'POST'],
-        credentials: true
-    }
-});
-
+// Data storage setup
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'sensor_data.txt');
 
 const accountSid = process.env.accountSid;
 const authToken = process.env.authToken;
 
+console.log(accountSid);
+console.log(authToken);
 
-// Create a Twilio client
 const client = twilio(accountSid, authToken);
 
-// Function to send an SMS
 async function sendSMS(to, message) {
     try {
         const response = await client.messages.create({
@@ -49,6 +32,7 @@ async function sendSMS(to, message) {
     }
 }
 
+// Ensure data directory exists
 (async () => {
     try {
         await fs.mkdir(DATA_DIR, { recursive: true });
@@ -56,6 +40,7 @@ async function sendSMS(to, message) {
         console.error('Error creating directory:', err);
     }
 })();
+
 
 io.on('connection', (socket) => {
     console.log('Client connected');
@@ -75,46 +60,26 @@ io.on('connection', (socket) => {
     );
 });
 
+const app = express();
+app.use(cors());
+app.use(express.json());
+
 app.post('/', async (req, res) => {
     try {
+        const data = req.body;
         const timestamp = new Date().toISOString().replace('T', ' ').substr(0, 19);
-
-
         
-        const cleanData = req.body.replace(/^\$/, '').replace(/#$/, '');
-        const [timeStr, ...values] = cleanData.split(',');
-
-        const parsedData = {
-            sensorTime: timeStr,
-            timestamp: timestamp,
-            values: {
-                acceleration: parseFloat(values[0]),
-                gyro: parseFloat(values[1]),
-                temperature: parseFloat(values[2]),
-                ecg: parseInt(values[3]),
-                bpm: parseInt(values[4]),
-                fallDetection: parseInt(values[5]),
-                egrConnection: parseInt(values[6]),
-            },
-        };
-
-        console.log('Parsed Data:', parsedData);
+        // Save to file
+        await fs.appendFile(DATA_FILE, `[${timestamp}] ${JSON.stringify(data)}\n`);
         
-        io.emit('newData', parsedData);
-        
-        await fs.appendFile(
-            DATA_FILE, 
-            `[${timestamp}] Raw: ${req.body} | Parsed: ${JSON.stringify(parsedData)}\n`
-        );
-        
-        res.status(200).send('Data Received');
+        console.log(`Data received: [${timestamp}] ${JSON.stringify(data)}`);
+        console.log(`Data received: [${timestamp}] data`);        
+        res.status(200).send('Data received');
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error processing data:', error);
         res.status(500).send('Error processing data');
     }
 });
 
-
-
-const PORT = 5000;
-server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log("Server is Running on " + PORT));
